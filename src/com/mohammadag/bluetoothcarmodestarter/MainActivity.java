@@ -1,9 +1,5 @@
 package com.mohammadag.bluetoothcarmodestarter;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Set;
-
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.bluetooth.BluetoothAdapter;
@@ -21,8 +17,10 @@ import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.Button;
 import android.widget.ListView;
-import android.widget.TextView;
 import android.widget.Toast;
+
+import java.util.ArrayList;
+import java.util.Set;
 
 public class MainActivity extends Activity {
 	
@@ -40,7 +38,7 @@ public class MainActivity extends Activity {
 		setContentView(R.layout.activity_main);
 		getViews();
 		
-		mPreferences = getSharedPreferences(Common.PREFS_NAME, 0);
+		mPreferences = getSharedPreferences(Common.PREFS_NAME, Context.MODE_PRIVATE);
 
 		mListView.setOnItemClickListener(new OnItemClickListener() {
 			@Override
@@ -60,7 +58,7 @@ public class MainActivity extends Activity {
 	private void loadListOfDevicesIntoUi() {
 		Set<String> enabledDevices = mPreferences.getStringSet(Common.SETTINGS_KEY_BLUETOOTH_ADDRESSES, null);
 		mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-		
+
 		if (!mBluetoothAdapter.isEnabled()) {
 			if (mCurrentAttempt > Common.MAX_RETRIES) {
 				rageAboutNoBluetooth();
@@ -115,19 +113,11 @@ public class MainActivity extends Activity {
 	}
 
 	private void saveDevices() {
-		Set<String> bluetoothDevices = new HashSet<String>();
-		View v;
-		for (int i = 0; i < mListView.getCount(); i++) {
-			v = mListView.getAdapter().getView(i, null, null);
-			
-			if (mArrayAdapter.isItemAtPositionSelected(i)) {
-				TextView btAddressTextView = (TextView) v.findViewById(R.id.bluetooth_device_address);
-				bluetoothDevices.add(btAddressTextView.getText().toString());
-			}
-		}
-		Editor editor = mPreferences.edit();
-		editor.putStringSet(Common.SETTINGS_KEY_BLUETOOTH_ADDRESSES, bluetoothDevices);
-		editor.commit();
+        Set<String> bluetoothDevices = mArrayAdapter.getCheckedBluetoothDevices();
+
+        SharedPreferences.Editor editor = mPreferences.edit();
+        editor.clear();
+        editor.putStringSet(Common.SETTINGS_KEY_BLUETOOTH_ADDRESSES, bluetoothDevices).apply();
 	}
 	
 	@Override
@@ -135,20 +125,20 @@ public class MainActivity extends Activity {
 		getMenuInflater().inflate(R.menu.main, menu);
 		return true;
 	}
-	
-	private ArrayList<BluetoothDevice> getBluetoothDevices() {
-		Set<BluetoothDevice> pairedDevices = mBluetoothAdapter.getBondedDevices();
-		ArrayList<BluetoothDevice> array = new ArrayList<BluetoothDevice>();
-		for (BluetoothDevice device : pairedDevices) {
-			array.add(device);
-		}
-		return array;
-	}
+
+    private ArrayList<BluetoothDevice> getBluetoothDevices() {
+        Set<BluetoothDevice> pairedDevices = mBluetoothAdapter.getBondedDevices();
+        ArrayList<BluetoothDevice> array = new ArrayList<>();
+        for (BluetoothDevice device : pairedDevices) {
+            array.add(device);
+        }
+        return array;
+    }
 	
 	public void showAbout() {
 		AlertDialog.Builder alertDialog = new AlertDialog.Builder(MainActivity.this)
-		.setTitle(R.string.about_dialog_title)
-		.setMessage(R.string.about_text);
+		        .setTitle(R.string.about_dialog_title)
+		        .setMessage(R.string.about_text);
 		
         alertDialog.show();
     }
